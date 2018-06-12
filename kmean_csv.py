@@ -1,6 +1,26 @@
 from random import choice
 from matplotlib import pyplot as plt
-from file import dataset
+import numpy as np
+import pandas as pd
+from math import ceil, floor
+import csv
+
+# grab column headers from csv
+
+with open('data.csv', newline='') as f:
+    reader = csv.reader(f)
+    headers = next(reader)
+
+# read data from csv and separate into columns
+
+data = pd.read_csv('data.csv')
+col1 = list(data[headers[0]].values)
+col2 = list(data[headers[1]].values)
+
+# wow thats a lot of listing. basically just formats the data so that its in
+# the form of a list of lists
+
+dataset = list(map(list, list(zip(col1, col2))))
 
 # randomly generates centroids without repeats, takes the number of clusters
 # and the data points as inputs, returns a list of the coordinates of the
@@ -12,8 +32,8 @@ def gen_clusters(k, data_points):
     x_min, x_max = min(x_vals), max(x_vals)
     y_vals = [i[1] for i in data_points]
     y_min, y_max = min(y_vals), max(y_vals)
-    x_range = list(range(x_min, x_max + 1))
-    y_range = list(range(y_min, y_max + 1))
+    x_range = list(range(ceil(x_min), floor(x_max + 1)))
+    y_range = list(range(ceil(y_min), floor(y_max + 1)))
 
     cluster_locations = []
     for j in range(k):
@@ -45,6 +65,8 @@ def associate_points(cluster_associations, data_points, cluster_number):
 
 # finds the mean of the points associated with a cluster
 def point_mean(cluster_associations, data_points, cluster_number):
+
+   #try-except in the case that no points associate with a centroid, which returns a divide by zero since len(new_x) and len(new_y) are 0
     try:
         #which points are associated with cluster x?
         associated = associate_points(cluster_associations, data_points, cluster_number)
@@ -59,14 +81,14 @@ def point_mean(cluster_associations, data_points, cluster_number):
         new_mean_location = [mean_x, mean_y]
 
         return(new_mean_location)
+
     except:
         pass
-
 # initialize the algorithm by setting the number of clusters, generating
 # datapoints, generating clusters, and running the first iteration of the
 # point-cluster association 
 
-k_clusters = 4
+k_clusters = 3
 initial_clusters = gen_clusters(k_clusters, dataset)
 associations = nearest_cluster(dataset, initial_clusters)
 new_clusters = list(initial_clusters)
@@ -75,7 +97,12 @@ new_clusters = list(initial_clusters)
 # with that cluster, and move the cluster to the new mean, and repeat until the
 # cluster no longer moves, meaning that the clustering is complete
 
-while new_clusters != [point_mean(associations, dataset, cluster_num) for cluster_num in range(k_clusters)]:
+# while loop doesnt work for some reason, idea behind it was to keep going
+# until it would no longer move, but it works with a for loop and the
+# performance isnt that bad, 100 loops takes like 1~ second
+
+#while new_clusters != [point_mean(associations, dataset, cluster_num) for cluster_num in range(k_clusters)]:
+for i in range(100):
     associations = nearest_cluster(dataset, new_clusters)
     new_clusters = [point_mean(associations, dataset, cluster_num) for cluster_num in range(k_clusters)]
 
