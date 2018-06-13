@@ -4,23 +4,7 @@ import numpy as np
 import pandas as pd
 from math import ceil, floor
 import csv
-
-# grab column headers from csv
-
-with open('data.csv', newline='') as f:
-    reader = csv.reader(f)
-    headers = next(reader)
-
-# read data from csv and separate into columns
-
-data = pd.read_csv('data.csv')
-col1 = list(data[headers[0]].values)
-col2 = list(data[headers[1]].values)
-
-# wow thats a lot of listing. basically just formats the data so that its in
-# the form of a list of lists
-
-dataset = list(map(list, list(zip(col1, col2))))
+from sklearn.datasets import make_blobs
 
 # randomly generates centroids without repeats, takes the number of clusters
 # and the data points as inputs, returns a list of the coordinates of the
@@ -84,9 +68,21 @@ def point_mean(cluster_associations, data_points, cluster_number):
 
     except:
         pass
+
 # initialize the algorithm by setting the number of clusters, generating
 # datapoints, generating clusters, and running the first iteration of the
 # point-cluster association 
+
+data_source = 'csv'
+if data_source == 'csv':
+    with open('data.csv', 'r') as f:
+        next(f)
+        reader = csv.reader(f)
+        data_strings = list(reader)
+        dataset = [list(map(float, i)) for i in data_strings]
+else:
+    X, y = make_blobs(n_samples=1000, n_features=2, centers=3)
+    dataset = list(map(list, X))
 
 k_clusters = 3
 initial_clusters = gen_clusters(k_clusters, dataset)
@@ -101,13 +97,21 @@ new_clusters = list(initial_clusters)
 # until it would no longer move, but it works with a for loop and the
 # performance isnt that bad, 100 loops takes like 1~ second
 
-#while new_clusters != [point_mean(associations, dataset, cluster_num) for cluster_num in range(k_clusters)]:
-for i in range(100):
+for i in range(200):
     associations = nearest_cluster(dataset, new_clusters)
     new_clusters = [point_mean(associations, dataset, cluster_num) for cluster_num in range(k_clusters)]
 
-
 final_associations = [associate_points(associations, dataset, cluster_num) for cluster_num in range(k_clusters)]
+rounded_new_clusters = [list(map(lambda x: "%.4f" %x, i)) for i in sorted(new_clusters)]
+
+# sklearn kmeans for comparison
+from sklearn.cluster import KMeans
+kmeans = KMeans(n_clusters=k_clusters)
+kmeans.fit_transform(dataset)
+rounded_cluster_centers = [list(map(lambda x: "%.4f" %x, i)) for i in sorted(kmeans.cluster_centers_.tolist())]
+
+print(rounded_new_clusters)
+print(rounded_cluster_centers)
 
 # plots two graphs, one with the initial clusters and the unclassified data
 # points and another with the moved clusters and their associated data points
@@ -119,38 +123,12 @@ ax1.scatter([i[0] for i in dataset], [i[1] for i in dataset], color='c')
 ax1.scatter([i[0] for i in initial_clusters], [i[1] for i in initial_clusters], color='k')
 ax1.set_title("Initial Clustering")
 
-# sorry this is some really ugly code but i cant get the colors and labels
-# working when i try to plot the points with a for loop and i need the colors
-# to work this is a temporary solution to dynamically color the different
-# clustered points
-
-if k_clusters == 2:
-    ax2.scatter([i[0] for i in final_associations[0]], [i[1] for i in final_associations[0]], color='c')
-    ax2.scatter([i[0] for i in final_associations[1]], [i[1] for i in final_associations[1]], color='r')
-elif k_clusters == 3:
-    ax2.scatter([i[0] for i in final_associations[0]], [i[1] for i in final_associations[0]], color='c')
-    ax2.scatter([i[0] for i in final_associations[1]], [i[1] for i in final_associations[1]], color='r')
-    ax2.scatter([i[0] for i in final_associations[2]], [i[1] for i in final_associations[2]], color='y')
-elif k_clusters == 4:
-    ax2.scatter([i[0] for i in final_associations[0]], [i[1] for i in final_associations[0]], color='c')
-    ax2.scatter([i[0] for i in final_associations[1]], [i[1] for i in final_associations[1]], color='r')
-    ax2.scatter([i[0] for i in final_associations[2]], [i[1] for i in final_associations[2]], color='y')
-    ax2.scatter([i[0] for i in final_associations[3]], [i[1] for i in final_associations[3]], color='b')
-elif k_clusters == 5:
-    ax2.scatter([i[0] for i in final_associations[0]], [i[1] for i in final_associations[0]], color='c')
-    ax2.scatter([i[0] for i in final_associations[1]], [i[1] for i in final_associations[1]], color='r')
-    ax2.scatter([i[0] for i in final_associations[2]], [i[1] for i in final_associations[2]], color='y')
-    ax2.scatter([i[0] for i in final_associations[3]], [i[1] for i in final_associations[3]], color='b')
-    ax2.scatter([i[0] for i in final_associations[4]], [i[1] for i in final_associations[4]], color='g')
-elif k_clusters == 6:
-    ax2.scatter([i[0] for i in final_associations[0]], [i[1] for i in final_associations[0]], color='c')
-    ax2.scatter([i[0] for i in final_associations[1]], [i[1] for i in final_associations[1]], color='r')
-    ax2.scatter([i[0] for i in final_associations[2]], [i[1] for i in final_associations[2]], color='y')
-    ax2.scatter([i[0] for i in final_associations[3]], [i[1] for i in final_associations[3]], color='b')
-    ax2.scatter([i[0] for i in final_associations[4]], [i[1] for i in final_associations[4]], color='g')
-    ax2.scatter([i[0] for i in final_associations[5]], [i[1] for i in final_associations[5]], color='m')
+colors = ['c', 'r', 'y', 'b', 'g', 'm']
+for i in range(k_clusters):
+    ax2.scatter([j[0] for j in final_associations[i]], [j[1] for j in final_associations[i]], color=colors[i])
 
 ax2.scatter([i[0] for i in new_clusters], [i[1] for i in new_clusters], label="new_centroids", color='k')
 ax2.set_title("Final Clustering")
 
 plt.show()
+
