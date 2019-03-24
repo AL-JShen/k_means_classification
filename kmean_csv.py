@@ -73,7 +73,7 @@ def point_mean(cluster_associations, data_points, cluster_number):
 # datapoints, generating clusters, and running the first iteration of the
 # point-cluster association 
 
-data_source = 'csv'
+data_source = 'random'
 if data_source == 'csv':
     with open('data.csv', 'r') as f:
         next(f)
@@ -92,10 +92,6 @@ new_clusters = list(initial_clusters)
 # associate points with the nearest cluster, find mean of points associated
 # with that cluster, and move the cluster to the new mean, and repeat until the
 # cluster no longer moves, meaning that the clustering is complete
-
-# while loop doesnt work for some reason, idea behind it was to keep going
-# until it would no longer move, but it works with a for loop and the
-# performance isnt that bad, 100 loops takes like 1~ second
 
 for i in range(200):
     associations = nearest_cluster(dataset, new_clusters)
